@@ -1,0 +1,18 @@
+[33mcommit 56a0c65bfaec9adc02547d9b08b054244e87cc58[m[33m ([m[1;36mHEAD[m[33m)[m
+Author: Vivian Jessica <vivianjssica11@gmail.com>
+Date:   Sun Jun 21 16:52:55 2026 +0800
+
+    coba-coba
+
+ .mimocode/skills/frontend-design/SKILL.md |   55 [32m+[m
+ .mimocode/skills/shadcn/SKILL.md          |  235 [32m+[m
+ .mimocode/skills/ui-ux-pro-max/SKILL.md   |  654 [32m+++[m
+ app/globals.css                           |  132 [32m+[m[31m-[m
+ app/page.tsx                              |  237 [32m+[m[31m-[m
+ components.json                           |   25 [32m+[m
+ components/ui/button.tsx                  |   67 [32m+[m
+ lib/utils.ts                              |    6 [32m+[m
+ package.json                              |   14 [32m+[m[31m-[m
+ pnpm-lock.yaml                            | 6631 [32m+++++++++++++++++++++++[m[31m------[m
+ pnpm-workspace.yaml                       |    4 [32m+[m
+ 11 files changed, 6583 insertions(+), 1477 deletions(-)
