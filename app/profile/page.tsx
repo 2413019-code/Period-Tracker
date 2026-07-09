@@ -11,7 +11,7 @@ export default function ProfilePage() {
   // State untuk melacak apakah sedang dalam mode edit
   const [isEditing, setIsEditing] = useState(false);
 
-  // State untuk foto profil (default menggunakan emoji, bisa diganti file gambar)
+  // State untuk foto profil (Menggunakan Base64 agar tersimpan permanen)
   const [profileImage, setProfileImage] = useState<string | null>(null);
 
   // State Data Profil
@@ -31,48 +31,94 @@ export default function ProfilePage() {
     reminder: 'H-2 Sebelum Siklus'
   });
 
-  // ==========================================
-  // TAMBAHAN AMBIL DATA SIKLUS DARI MEMORI HP
-  // ==========================================
-  useEffect(() => {
-    const savedCycle = localStorage.getItem('userCycleLength');
-    if (savedCycle) {
-      setCycleData(prev => ({ ...prev, avgCycle: savedCycle }));
-    }
-  }, []);
-
-  // ==========================================
-  // TAMBAHAN FUNGSI UNTUK MENYIMPAN SIKLUS
-  // ==========================================
-  const handleSaveCycleLength = () => {
-    if (cycleData && cycleData.avgCycle) {
-      localStorage.setItem('userCycleLength', cycleData.avgCycle);
-    }
-    setIsEditing(false);
-  };
-
-  // State Data Privasi (Hanya PIN yang bisa diubah)
+  // State Data Privasi
   const [privacyData, setPrivacyData] = useState({
     pin: '1234'
   });
+
+  // ========================================================
+  // MEMUAT SEMUA DATA YANG TERSIMPAN SAAT HALAMAN DIBUKA
+  // ========================================================
+  useEffect(() => {
+    // 1. Ambil Data Profil & Email
+    const savedProfile = localStorage.getItem('userProfileData');
+    if (savedProfile) {
+      setProfileData(JSON.parse(savedProfile));
+    } else {
+      // Cadangan sinkronisasi jika hanya ada key 'userName' dari halaman Home sebelumnya
+      const savedName = localStorage.getItem('userName');
+      if (savedName) {
+        setProfileData(prev => ({ ...prev, name: savedName }));
+      }
+    }
+
+    // 2. Ambil Data Siklus
+    const savedCycleData = localStorage.getItem('userCycleData');
+    const savedCycleLength = localStorage.getItem('userCycleLength');
+    if (savedCycleData) {
+      setCycleData(JSON.parse(savedCycleData));
+    } else if (savedCycleLength) {
+      setCycleData(prev => ({ ...prev, avgCycle: savedCycleLength }));
+    }
+
+    // 3. Ambil Data PIN Privasi
+    const savedPrivacy = localStorage.getItem('userPrivacyData');
+    if (savedPrivacy) {
+      setPrivacyData(JSON.parse(savedPrivacy));
+    }
+
+    // 4. Ambil Foto Profil Berformat Base64
+    const savedImage = localStorage.getItem('userProfileImage');
+    if (savedImage) {
+      setProfileImage(savedImage);
+    }
+  }, []);
+
+  // ========================================================
+  // FUNGSI UTAMA UNTUK MENYIMPAN SETIAP PERUBAHAN DATA
+  // ========================================================
+  const handleSaveChanges = () => {
+    if (activeModal === 'PERSONAL INFORMATION') {
+      // Simpan seluruh objek profil (termasuk Nama & Email baru)
+      localStorage.setItem('userProfileData', JSON.stringify(profileData));
+      // Simpan terpisah khusus 'userName' agar langsung sinkron & terbaca oleh halaman Home
+      localStorage.setItem('userName', profileData.name);
+    } 
+    else if (activeModal === 'CYCLE SETTINGS') {
+      localStorage.setItem('userCycleData', JSON.stringify(cycleData));
+      if (cycleData.avgCycle) {
+        localStorage.setItem('userCycleLength', cycleData.avgCycle);
+      }
+    } 
+    else if (activeModal === 'PRIVACY & SECURITY') {
+      localStorage.setItem('userPrivacyData', JSON.stringify(privacyData));
+    }
+
+    setIsEditing(false);
+  };
 
   // Fungsi saat foto diklik untuk memicu input file komputer/HP
   const handlePhotoClick = () => {
     fileInputRef.current?.click();
   };
 
-  // Fungsi menangani perubahan file gambar yang diunggah
+  // Fungsi mengonversi file gambar ke Base64 string agar tersimpan permanen di memori
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const imageUrl = URL.createObjectURL(file);
-      setProfileImage(imageUrl);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        setProfileImage(base64String);
+        localStorage.setItem('userProfileImage', base64String);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
   // Fungsi dinamis untuk me-render isi modal
   const renderModalContent = () => {
-    const inputStyle = "bg-pink-50 border border-pink-200 rounded px-2 py-0.5 w-28 text-right font-semibold text-gray-700 outline-none focus:border-[#FF5C8A] transition";
+    const inputStyle = "bg-pink-50 border border-pink-200 rounded px-2 py-0.5 w-44 text-right font-semibold text-gray-700 outline-none focus:border-[#FF5C8A] transition text-[11px]";
 
     switch (activeModal) {
       case 'PERSONAL INFORMATION':
@@ -81,6 +127,11 @@ export default function ProfilePage() {
             <div className="flex justify-between items-center border-b pb-1.5">
               <strong>Nama Lengkap:</strong>
               {isEditing ? <input type="text" className={inputStyle} value={profileData.name} onChange={(e) => setProfileData({...profileData, name: e.target.value})} /> : <span>{profileData.name}</span>}
+            </div>
+            {/* PERBAIKAN: Input Email Sekarang Sudah Ditambahkan & Bisa Diedit */}
+            <div className="flex justify-between items-center border-b pb-1.5">
+              <strong>Email:</strong>
+              {isEditing ? <input type="email" className={inputStyle} value={profileData.email} onChange={(e) => setProfileData({...profileData, email: e.target.value})} /> : <span className="break-all">{profileData.email}</span>}
             </div>
             <div className="flex justify-between items-center border-b pb-1.5">
               <strong>Tanggal Lahir:</strong>
@@ -181,12 +232,10 @@ export default function ProfilePage() {
 
   return (
     <div className="bg-gray-100 flex items-center justify-center min-h-screen">
-      {/* Ubah bg disini menjadi bg-[#FFFDFE] */}
       <div className="bg-[#FFFDFE] w-full max-w-[390px] h-[844px] max-h-screen relative shadow-2xl overflow-hidden flex flex-col justify-between p-6 md:rounded-[40px]">
         
-        {/* Header Profile - Sekarang Foto Bisa Diklik */}
+        {/* Header Profile */}
         <div className="pt-4 flex flex-col items-center">
-          {/* Input File Tersembunyi */}
           <input 
             type="file" 
             ref={fileInputRef} 
@@ -195,7 +244,6 @@ export default function ProfilePage() {
             className="hidden" 
           />
           
-          {/* Lingkaran Foto Profil yang bisa di klik */}
           <button 
             type="button"
             onClick={handlePhotoClick}
@@ -208,14 +256,14 @@ export default function ProfilePage() {
             ) : (
               <span>👩‍🦰</span>
             )}
-            {/* Lapisan Hover Efek Transparan */}
             <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center text-[10px] text-white font-bold transition">
               Ubah
             </div>
           </button>
 
+          {/* Menampilkan Nama & Email secara dinamis di halaman utama profil */}
           <h2 className="text-sm font-extrabold text-[#333333]">{profileData.name}</h2>
-          <p className="text-[10px] text-gray-400 font-medium">{profileData.email}</p>
+          <p className="text-[10px] text-gray-400 font-medium break-all px-4 text-center">{profileData.email}</p>
         </div>
 
         {/* Clean Menu Container */}
@@ -231,7 +279,6 @@ export default function ProfilePage() {
             </button>
           ))}
 
-          {/* Tombol Log Out */}
           <button
             type="button"
             onClick={() => router.push('/login')}
@@ -243,10 +290,9 @@ export default function ProfilePage() {
 
         {/* Pop-up Modal Detail Data Dinamis */}
         {activeModal && (
-          <div className="absolute inset-0 bg-black/40 z-50 flex items-center justify-center p-6 animate-fade-in">
-            <div className="bg-white w-full rounded-2xl p-5 shadow-xl text-center max-w-[300px]">
+          <div className="absolute inset-0 bg-black/40 z-50 flex items-center justify-center p-6">
+            <div className="bg-white w-full rounded-2xl p-5 shadow-xl text-center max-w-[310px]">
               
-              {/* Header Modal & Tombol Edit */}
               <div className="flex justify-between items-center mb-4 border-b pb-2">
                 <h3 className="text-xs font-black text-[#FF5C8A] tracking-wide">{activeModal}</h3>
                 {menuItems.find(m => m.name === activeModal)?.editable && (
@@ -259,15 +305,14 @@ export default function ProfilePage() {
                 )}
               </div>
               
-              {/* Konten Modal */}
               <div className="mb-5">
                 {renderModalContent()}
               </div>
 
-              {/* Tombol Aksi Bawah - SUDAH TERPASANG FUNGSINYA */}
+              {/* PERBAIKAN: Mengganti fungsi simpan agar memproses ke localStorage */}
               {isEditing ? (
                 <button 
-                  onClick={activeModal === 'CYCLE SETTINGS' ? handleSaveCycleLength : () => setIsEditing(false)}
+                  onClick={handleSaveChanges}
                   className="w-full bg-emerald-500 text-white py-2 rounded-xl text-[10px] font-bold shadow-md hover:bg-emerald-600 active:scale-95 transition"
                 >
                   ✓ Simpan Perubahan
@@ -294,9 +339,6 @@ export default function ProfilePage() {
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121.75 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5a2.25 2.25 0 002.25-2.25m-18 0v-4.75m18 4.75v-4.75m-18-3.5h18" /></svg>
             <span className="text-[8px] font-medium mt-0.5">Calendar</span>
           </button>
-          <div className="flex-1 flex justify-center -mt-6 relative z-20">
-            <button type="button" onClick={() => router.push('/')} className="w-10 h-10 bg-[#FF5C8A] rounded-full flex items-center justify-center shadow-xl text-white font-bold text-xl">+</button>
-          </div>
           <button type="button" onClick={() => router.push('/stats')} className="flex flex-col items-center justify-center flex-1 py-1 text-[#9CA3AF]">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" /></svg>
             <span className="text-[8px] font-medium mt-0.5">Stats</span>
