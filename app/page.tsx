@@ -31,6 +31,11 @@ export default function HomePage() {
   const [periodEnd, setPeriodEnd] = useState<Date | null>(null);
 
   // ========================================================
+  // KODE INTEGRASI: Diubah menjadi string kosong agar default-nya hanya "Hai"
+  // ========================================================
+  const [userName, setUserName] = useState<string>('');
+
+  // ========================================================
   // KODE TAMBAHAN LOGIKA: State untuk Mengontrol Modal (+) 
   // ========================================================
   const [isLogModalOpen, setIsLogModalOpen] = useState<boolean>(false);
@@ -41,6 +46,12 @@ export default function HomePage() {
   const dateKey = `${todayDate.getFullYear()}-${String(todayDate.getMonth() + 1).padStart(2, '0')}-${String(todayDate.getDate()).padStart(2, '0')}`;
 
   useEffect(() => {
+    // KODE INTEGRASI: Mengambil nama dari localStorage jika tersedia
+    const savedName = localStorage.getItem('userName');
+    if (savedName) {
+      setUserName(savedName);
+    }
+
     // 1. Mengambil data panjang siklus dari localStorage
     const savedCycle = localStorage.getItem('userCycleLength');
     if (savedCycle) {
@@ -231,10 +242,12 @@ export default function HomePage() {
         {/* SCROLLABLE AREA */}
         <div className="flex-1 overflow-y-auto pb-24 hide-scrollbar">
           
-          {/* HEADER (SUDAH OTOMATIS) */}
+          {/* HEADER (OTOMATIS "Hai" ATAU "Hai, [Nama]") */}
           <div className="flex justify-between items-center p-6 pt-10 mb-2">
             <div>
-              <h1 className="font-extrabold text-[#333333] text-lg leading-tight">Hi, Amanda</h1>
+              <h1 className="font-extrabold text-[#333333] text-lg leading-tight">
+                Hai{userName ? `, ${userName}` : ''}
+              </h1>
               {/* Teks di bawah ini akan berubah sesuai waktu */}
               <p className="text-gray-400 text-[11px] font-medium">{greeting}</p>
             </div>

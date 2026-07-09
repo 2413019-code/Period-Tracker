@@ -44,8 +44,26 @@ export default function AuthPage() {
     setTimeout(() => {
       setIsLoading(false);
       if (isLogin) {
+        // ==========================================
+        // KODE INTEGRASI: Simpan email & nama otomatis saat login biasa
+        // ==========================================
+        localStorage.setItem('userEmail', email.trim());
+        
+        // Jika belum ada nama yang tersimpan, buat nama instan dari email (contoh: amanda@email.com -> amanda)
+        if (!localStorage.getItem('userName')) {
+          const defaultName = email.split('@')[0];
+          const capitalizedName = defaultName.charAt(0).toUpperCase() + defaultName.slice(1);
+          localStorage.setItem('userName', capitalizedName);
+        }
+
         router.push('/'); 
       } else {
+        // ==========================================
+        // KODE INTEGRASI: Simpan nama dan email saat register
+        // ==========================================
+        localStorage.setItem('userName', fullName.trim());
+        localStorage.setItem('userEmail', email.trim());
+
         showNotification('success', 'Akun berhasil dibuat! Silakan Login.');
         setIsLogin(true); 
         setPassword('');
@@ -57,6 +75,12 @@ export default function AuthPage() {
   const handleGoogleAuth = () => {
     setIsGoogleLoading(true);
     setTimeout(() => {
+      // ==========================================
+      // KODE INTEGRASI: Simpan data akun Google
+      // ==========================================
+      localStorage.setItem('userName', 'Vivian');
+      localStorage.setItem('userEmail', 'vivian@google.com');
+
       setIsGoogleLoading(false);
       router.push('/');
     }, 2000);
@@ -157,7 +181,6 @@ export default function AuthPage() {
                   disabled={isLoading || isGoogleLoading}
                 />
                 
-                {/* Tombol Show/Hide Password dengan SVG Icon Murni */}
                 <button 
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
@@ -194,11 +217,11 @@ export default function AuthPage() {
                     disabled={isLoading || isGoogleLoading}
                   />
                   
-                  {/* Tombol Show/Hide Confirm Password dengan SVG Icon Murni */}
                   <button 
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                     className="absolute inset-y-0 right-0 flex items-center pr-3 text-[#9CA3AF] hover:text-[#FF5C8A] z-10"
+                    disabled={isLoading || isGoogleLoading}
                   >
                     {showConfirmPassword ? <EyeSlashIcon /> : <EyeIcon />}
                   </button>

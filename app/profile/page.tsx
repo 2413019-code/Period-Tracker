@@ -14,10 +14,12 @@ export default function ProfilePage() {
   // State untuk foto profil (default menggunakan emoji, bisa diganti file gambar)
   const [profileImage, setProfileImage] = useState<string | null>(null);
 
-  // State Data Profil
+  // ==========================================
+  // KODE INTEGRASI: Default nama & email dikosongkan agar sinkron
+  // ==========================================
   const [profileData, setProfileData] = useState({
-    name: 'Amanda Putri',
-    email: 'amanda.cycle@email.com',
+    name: '',
+    email: '',
     dob: '14 Februari 2002',
     bloodType: 'O+',
     height: '162',
@@ -32,9 +34,19 @@ export default function ProfilePage() {
   });
 
   // ==========================================
-  // TAMBAHAN AMBIL DATA SIKLUS DARI MEMORI HP
+  // KODE INTEGRASI: Ambil Nama, Siklus, & Email dari localStorage
   // ==========================================
   useEffect(() => {
+    const savedName = localStorage.getItem('userName');
+    if (savedName) {
+      setProfileData(prev => ({ ...prev, name: savedName }));
+    }
+
+    const savedEmail = localStorage.getItem('userEmail');
+    if (savedEmail) {
+      setProfileData(prev => ({ ...prev, email: savedEmail }));
+    }
+
     const savedCycle = localStorage.getItem('userCycleLength');
     if (savedCycle) {
       setCycleData(prev => ({ ...prev, avgCycle: savedCycle }));
@@ -42,8 +54,15 @@ export default function ProfilePage() {
   }, []);
 
   // ==========================================
-  // TAMBAHAN FUNGSI UNTUK MENYIMPAN SIKLUS
+  // KODE INTEGRASI: Fungsi Menyimpan Info Pribadi ke localStorage
   // ==========================================
+  const handleSavePersonalInfo = () => {
+    localStorage.setItem('userName', profileData.name.trim());
+    localStorage.setItem('userEmail', profileData.email.trim());
+    setIsEditing(false);
+  };
+
+  // Fungsi untuk menyimpan Siklus
   const handleSaveCycleLength = () => {
     if (cycleData && cycleData.avgCycle) {
       localStorage.setItem('userCycleLength', cycleData.avgCycle);
@@ -80,7 +99,11 @@ export default function ProfilePage() {
           <div className="text-left space-y-3 text-[11px] text-[#333333]">
             <div className="flex justify-between items-center border-b pb-1.5">
               <strong>Nama Lengkap:</strong>
-              {isEditing ? <input type="text" className={inputStyle} value={profileData.name} onChange={(e) => setProfileData({...profileData, name: e.target.value})} /> : <span>{profileData.name}</span>}
+              {isEditing ? <input type="text" className={inputStyle} value={profileData.name} onChange={(e) => setProfileData({...profileData, name: e.target.value})} placeholder="Masukkan nama..." /> : <span>{profileData.name || 'Belum diisi'}</span>}
+            </div>
+            <div className="flex justify-between items-center border-b pb-1.5">
+              <strong>Email:</strong>
+              {isEditing ? <input type="email" className={inputStyle} value={profileData.email} onChange={(e) => setProfileData({...profileData, email: e.target.value})} placeholder="user@email.com" /> : <span>{profileData.email || 'Belum ada email'}</span>}
             </div>
             <div className="flex justify-between items-center border-b pb-1.5">
               <strong>Tanggal Lahir:</strong>
@@ -181,12 +204,10 @@ export default function ProfilePage() {
 
   return (
     <div className="bg-gray-100 flex items-center justify-center min-h-screen">
-      {/* Ubah bg disini menjadi bg-[#FFFDFE] */}
       <div className="bg-[#FFFDFE] w-full max-w-[390px] h-[844px] max-h-screen relative shadow-2xl overflow-hidden flex flex-col justify-between p-6 md:rounded-[40px]">
         
-        {/* Header Profile - Sekarang Foto Bisa Diklik */}
+        {/* Header Profile */}
         <div className="pt-4 flex flex-col items-center">
-          {/* Input File Tersembunyi */}
           <input 
             type="file" 
             ref={fileInputRef} 
@@ -195,7 +216,6 @@ export default function ProfilePage() {
             className="hidden" 
           />
           
-          {/* Lingkaran Foto Profil yang bisa di klik */}
           <button 
             type="button"
             onClick={handlePhotoClick}
@@ -208,14 +228,16 @@ export default function ProfilePage() {
             ) : (
               <span>👩‍🦰</span>
             )}
-            {/* Lapisan Hover Efek Transparan */}
             <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center text-[10px] text-white font-bold transition">
               Ubah
             </div>
           </button>
 
-          <h2 className="text-sm font-extrabold text-[#333333]">{profileData.name}</h2>
-          <p className="text-[10px] text-gray-400 font-medium">{profileData.email}</p>
+          {/* KODE INTEGRASI: Fallback jika nama kosong akan tertulis 'User' */}
+          <h2 className="text-sm font-extrabold text-[#333333]">{profileData.name || 'User'}</h2>
+          
+          {/* KODE INTEGRASI: Sekarang memunculkan email yang diambil dinamis */}
+          <p className="text-[10px] text-gray-400 font-medium">{profileData.email || 'email.tidak.diketahui@email.com'}</p>
         </div>
 
         {/* Clean Menu Container */}
@@ -231,7 +253,6 @@ export default function ProfilePage() {
             </button>
           ))}
 
-          {/* Tombol Log Out */}
           <button
             type="button"
             onClick={() => router.push('/login')}
@@ -246,7 +267,6 @@ export default function ProfilePage() {
           <div className="absolute inset-0 bg-black/40 z-50 flex items-center justify-center p-6 animate-fade-in">
             <div className="bg-white w-full rounded-2xl p-5 shadow-xl text-center max-w-[300px]">
               
-              {/* Header Modal & Tombol Edit */}
               <div className="flex justify-between items-center mb-4 border-b pb-2">
                 <h3 className="text-xs font-black text-[#FF5C8A] tracking-wide">{activeModal}</h3>
                 {menuItems.find(m => m.name === activeModal)?.editable && (
@@ -259,15 +279,22 @@ export default function ProfilePage() {
                 )}
               </div>
               
-              {/* Konten Modal */}
               <div className="mb-5">
                 {renderModalContent()}
               </div>
 
-              {/* Tombol Aksi Bawah - SUDAH TERPASANG FUNGSINYA */}
+              {/* KODE INTEGRASI: Kondisi Simpan Perubahan Dinamis */}
               {isEditing ? (
                 <button 
-                  onClick={activeModal === 'CYCLE SETTINGS' ? handleSaveCycleLength : () => setIsEditing(false)}
+                  onClick={() => {
+                    if (activeModal === 'CYCLE SETTINGS') {
+                      handleSaveCycleLength();
+                    } else if (activeModal === 'PERSONAL INFORMATION') {
+                      handleSavePersonalInfo();
+                    } else {
+                      setIsEditing(false);
+                    }
+                  }}
                   className="w-full bg-emerald-500 text-white py-2 rounded-xl text-[10px] font-bold shadow-md hover:bg-emerald-600 active:scale-95 transition"
                 >
                   ✓ Simpan Perubahan
